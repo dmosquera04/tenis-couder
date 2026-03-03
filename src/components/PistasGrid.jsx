@@ -161,10 +161,9 @@ export default function PistasGrid({ fecha }) {
   )
 
   return (
-    <>
+    <div className="flex-1 min-h-0 flex flex-col">
       <div
-        className="overflow-auto rounded-xl border border-gray-200 shadow-sm bg-white"
-        style={{ maxHeight: 'calc(100vh - 148px)' }}
+        className="flex-1 min-h-0 overflow-auto rounded-xl border border-gray-200 shadow-sm bg-white"
       >
 
         {/* ══ CABECERA STICKY (top) ════════════════════════════════════════════ */}
@@ -293,6 +292,6 @@ export default function PistasGrid({ fecha }) {
           onSuccess={() => { refetch(); setReservaActiva(null) }}
         />
       )}
-    </>
+    </div>
   )
 }

@@ -33,7 +33,7 @@ export default function BannerNotificaciones({ notificaciones, onDismiss }) {
       <div className="flex items-center gap-2.5 min-w-0">
         <IconCampana />
 
-        <p className="text-sm text-yellow-800 truncate">
+        <p className="text-sm text-yellow-800 line-clamp-2 sm:truncate sm:line-clamp-none">
           {visibles.map(n => n.mensaje).join('  ·  ')}
           {extra > 0 && (
             <span className="text-yellow-600 ml-1">
