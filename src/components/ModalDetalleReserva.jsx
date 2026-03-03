@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { EVT_NUEVA_NOTIFICACION } from '../hooks/useNotificaciones'
 
 // ─── Config tipos ───────────────────────────────────────────────────────────────
 const TIPO_INFO = {
@@ -54,14 +55,27 @@ export default function ModalDetalleReserva({ reserva, pista, onClose, onSuccess
     setLoading(true)
     setError(null)
 
+    // 1. Eliminar la reserva
     const { error: sbError } = await supabase
       .from('reservas')
       .delete()
       .eq('id', reserva.id)
 
-    setLoading(false)
-    if (sbError) { setError(sbError.message); return }
+    if (sbError) { setLoading(false); setError(sbError.message); return }
 
+    // 2. Insertar notificación de pista liberada.
+    //    reserva_id = null porque la reserva ya no existe en BD.
+    const mensaje = `${pista.nombre} libre - ${inicio}h`
+    await supabase.from('notificaciones').insert({
+      reserva_id: null,
+      mensaje,
+      leida:      false,
+    })
+
+    // 3. Notificar al banner mediante evento de ventana (sin prop-drilling)
+    window.dispatchEvent(new Event(EVT_NUEVA_NOTIFICACION))
+
+    setLoading(false)
     onSuccess?.()
     onClose()
   }

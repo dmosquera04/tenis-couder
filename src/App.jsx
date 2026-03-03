@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import PistasGrid from './components/PistasGrid'
+import BannerNotificaciones from './components/BannerNotificaciones'
+import { useNotificaciones } from './hooks/useNotificaciones'
 
 const today = () => new Date().toISOString().split('T')[0]
 
@@ -20,6 +22,7 @@ function moveDay(iso, delta) {
 
 export default function App() {
   const [fecha, setFecha] = useState(today)
+  const { notificaciones, marcarTodasLeidas } = useNotificaciones()
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -68,6 +71,12 @@ export default function App() {
           </button>
         </div>
       </header>
+
+      {/* ── Banner notificaciones no leídas ── */}
+      <BannerNotificaciones
+        notificaciones={notificaciones}
+        onDismiss={marcarTodasLeidas}
+      />
 
       {/* ── Contenido principal ── */}
       <main className="flex-1 p-4 overflow-hidden">
