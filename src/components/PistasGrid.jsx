@@ -1,5 +1,8 @@
-import { usePistas }   from '../hooks/usePistas'
-import { useReservas } from '../hooks/useReservas'
+import { useState }           from 'react'
+import { usePistas }          from '../hooks/usePistas'
+import { useReservas }        from '../hooks/useReservas'
+import ModalNuevaReserva      from './ModalNuevaReserva'
+import ModalDetalleReserva    from './ModalDetalleReserva'
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
 
@@ -44,7 +47,7 @@ const STRIPE_BG = {
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
-// "09:30:00" | "09:30" → 570
+// "09:30:00" | "09:30" → 570 minutos
 function toMin(t) {
   const [h, m] = t.split(':').map(Number)
   return h * 60 + m
@@ -64,7 +67,9 @@ function blockHeight(hora_inicio, hora_fin) {
 function isCellOccupied(hora, reservasDePista) {
   const start = toMin(hora)
   const end   = start + 60
-  return reservasDePista.some(r => toMin(r.hora_inicio) < end && toMin(r.hora_fin) > start)
+  return reservasDePista.some(
+    r => toMin(r.hora_inicio) < end && toMin(r.hora_fin) > start
+  )
 }
 
 // ─── Sub-componentes ───────────────────────────────────────────────────────────
@@ -93,7 +98,7 @@ function ErrorState({ message }) {
 
 // Bloque de reserva: absolutamente posicionado dentro de su columna.
 // height proporcional a la duración → 90 min ocupa 1.5 celdas (96 px).
-function ReservaBlock({ reserva }) {
+function ReservaBlock({ reserva, onClick }) {
   const color  = RESERVA_COLOR[reserva.tipo] ?? RESERVA_COLOR.alquiler
   const top    = blockTop(reserva.hora_inicio)
   const height = blockHeight(reserva.hora_inicio, reserva.hora_fin)
@@ -104,6 +109,7 @@ function ReservaBlock({ reserva }) {
   return (
     <div
       title={`${color.label}${nombre ? ' · ' + nombre : ''} · ${inicio}–${fin}`}
+      onClick={onClick}
       style={{
         position:        'absolute',
         top:             top + 2,
@@ -115,21 +121,17 @@ function ReservaBlock({ reserva }) {
         borderRadius:    6,
         overflow:        'hidden',
       }}
-      className="px-2 py-1 text-white shadow-sm cursor-pointer select-none"
+      className="px-2 py-1 text-white shadow-sm cursor-pointer select-none
+                 hover:brightness-95 transition-[filter]"
     >
-      {/* Tipo de reserva */}
       <p className="text-[11px] font-semibold leading-tight truncate">
         {color.label}
       </p>
-
-      {/* Nombre cliente/profesor (si hay espacio) */}
       {height > 38 && nombre && (
         <p className="text-[10px] leading-tight truncate opacity-90 mt-0.5">
           {nombre}
         </p>
       )}
-
-      {/* Horario (si hay espacio) */}
       {height > 56 && (
         <p className="text-[10px] leading-tight opacity-75 mt-0.5">
           {inicio}–{fin}
@@ -143,7 +145,12 @@ function ReservaBlock({ reserva }) {
 
 export default function PistasGrid({ fecha }) {
   const { pistas,  loading: pistasLoading,  error: pistasError  } = usePistas()
-  const { reservas, loading: reservasLoading }                    = useReservas(fecha)
+  const { reservas, loading: reservasLoading, refetch }           = useReservas(fecha)
+
+  // null | { pista, hora }
+  const [celdaActiva,   setCeldaActiva]   = useState(null)
+  // null | { reserva, pista }
+  const [reservaActiva, setReservaActiva] = useState(null)
 
   if (pistasLoading) return <LoadingState />
   if (pistasError)   return <ErrorState message={pistasError.message} />
@@ -154,105 +161,138 @@ export default function PistasGrid({ fecha }) {
   )
 
   return (
-    <div
-      className="overflow-auto rounded-xl border border-gray-200 shadow-sm bg-white"
-      style={{ maxHeight: 'calc(100vh - 148px)' }}
-    >
-
-      {/* ══ CABECERA STICKY (top) ══════════════════════════════════════════════ */}
+    <>
       <div
-        className="flex border-b-2 border-gray-200 bg-white"
-        style={{ position: 'sticky', top: 0, zIndex: 20 }}
+        className="overflow-auto rounded-xl border border-gray-200 shadow-sm bg-white"
+        style={{ maxHeight: 'calc(100vh - 148px)' }}
       >
-        {/* Esquina — sticky top + left */}
+
+        {/* ══ CABECERA STICKY (top) ════════════════════════════════════════════ */}
         <div
-          className="flex-shrink-0 bg-gray-50 border-r border-gray-200
-                     flex items-center justify-center"
-          style={{ position: 'sticky', left: 0, zIndex: 30, width: COL_W }}
+          className="flex border-b-2 border-gray-200 bg-white"
+          style={{ position: 'sticky', top: 0, zIndex: 20 }}
         >
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
-            Hora
-          </span>
+          {/* Esquina — sticky top + left */}
+          <div
+            className="flex-shrink-0 bg-gray-50 border-r border-gray-200
+                       flex items-center justify-center"
+            style={{ position: 'sticky', left: 0, zIndex: 30, width: COL_W }}
+          >
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+              Hora
+            </span>
+          </div>
+
+          {/* Encabezado de cada pista */}
+          {pistas.map((pista) => {
+            const s = PISTA_STYLE[pista.tipo]
+            return (
+              <div
+                key={pista.id}
+                className={`relative flex-1 min-w-[130px] border-r border-gray-100
+                            flex flex-col items-center justify-center gap-1 px-2 py-3
+                            ${s.headerBg}`}
+              >
+                <div className={`absolute top-0 left-0 right-0 h-1 ${s.accent}`} />
+                <span className={`text-sm font-bold leading-tight ${s.headerText}`}>
+                  {pista.tipo === 'tenis' ? 'Tenis' : 'Pádel'} {pista.numero}
+                </span>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${s.badge}`}>
+                  {pista.nombre}
+                </span>
+              </div>
+            )
+          })}
         </div>
 
-        {/* Encabezado de cada pista */}
-        {pistas.map((pista) => {
-          const s = PISTA_STYLE[pista.tipo]
-          return (
-            <div
-              key={pista.id}
-              className={`relative flex-1 min-w-[130px] border-r border-gray-100
-                          flex flex-col items-center justify-center gap-1 px-2 py-3
-                          ${s.headerBg}`}
-            >
-              {/* Barra de color en la parte superior */}
-              <div className={`absolute top-0 left-0 right-0 h-1 ${s.accent}`} />
+        {/* ══ CUERPO ══════════════════════════════════════════════════════════ */}
+        <div className="flex">
 
-              <span className={`text-sm font-bold leading-tight ${s.headerText}`}>
-                {pista.tipo === 'tenis' ? 'Tenis' : 'Pádel'} {pista.numero}
-              </span>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${s.badge}`}>
-                {pista.nombre}
-              </span>
-            </div>
-          )
-        })}
-      </div>
+          {/* Columna de horas — sticky left */}
+          <div
+            className="flex-shrink-0 bg-gray-50 border-r border-gray-200"
+            style={{ position: 'sticky', left: 0, zIndex: 10, width: COL_W }}
+          >
+            {HORAS.map((hora) => (
+              <div
+                key={hora}
+                className="border-b border-gray-200 flex items-center justify-center"
+                style={{ height: CELL_H }}
+              >
+                <span className="text-xs font-semibold text-gray-400">{hora}</span>
+              </div>
+            ))}
+          </div>
 
-      {/* ══ CUERPO ════════════════════════════════════════════════════════════ */}
-      <div className="flex">
+          {/* Una columna por pista */}
+          {pistas.map((pista) => {
+            const reservasDePista = reservas.filter(r => r.pista_id === pista.id)
 
-        {/* Columna de horas — sticky left */}
-        <div
-          className="flex-shrink-0 bg-gray-50 border-r border-gray-200"
-          style={{ position: 'sticky', left: 0, zIndex: 10, width: COL_W }}
-        >
-          {HORAS.map((hora) => (
-            <div
-              key={hora}
-              className="border-b border-gray-200 flex items-center justify-center"
-              style={{ height: CELL_H }}
-            >
-              <span className="text-xs font-semibold text-gray-400">{hora}</span>
-            </div>
-          ))}
+            return (
+              <div
+                key={pista.id}
+                className="relative flex-1 min-w-[130px] border-r border-gray-100"
+              >
+                {/* Celdas de fondo: rayadas=libre, blancas=ocupada */}
+                {HORAS.map((hora) => {
+                  const ocupada = isCellOccupied(hora, reservasDePista)
+                  return (
+                    <div
+                      key={hora}
+                      className={`border-b border-gray-100 transition-colors
+                        ${!ocupada ? 'cursor-pointer hover:bg-black/[.03]' : 'cursor-default'}`}
+                      style={{
+                        height: CELL_H,
+                        ...(ocupada ? {} : STRIPE_BG),
+                      }}
+                      onClick={!ocupada
+                        ? () => setCeldaActiva({ pista, hora })
+                        : undefined
+                      }
+                    />
+                  )
+                })}
+
+                {/* Bloques de reserva: absolutos sobre el fondo */}
+                {reservasDePista.map((reserva) => (
+                  <ReservaBlock
+                    key={reserva.id}
+                    reserva={reserva}
+                    onClick={() => setReservaActiva({ reserva, pista })}
+                  />
+                ))}
+
+                {/* Velo mientras recarga reservas al cambiar de fecha */}
+                {reservasLoading && (
+                  <div className="absolute inset-0 bg-white/60 z-20" />
+                )}
+              </div>
+            )
+          })}
         </div>
 
-        {/* Una columna por pista */}
-        {pistas.map((pista) => {
-          const reservasDePista = reservas.filter(r => r.pista_id === pista.id)
-
-          return (
-            <div
-              key={pista.id}
-              className="relative flex-1 min-w-[130px] border-r border-gray-100"
-            >
-              {/* Celdas de fondo: rayadas si libres, blancas si ocupadas */}
-              {HORAS.map((hora) => (
-                <div
-                  key={hora}
-                  className="border-b border-gray-100"
-                  style={{
-                    height: CELL_H,
-                    ...(isCellOccupied(hora, reservasDePista) ? {} : STRIPE_BG),
-                  }}
-                />
-              ))}
-
-              {/* Bloques de reserva: absolutos sobre el fondo */}
-              {reservasDePista.map((reserva) => (
-                <ReservaBlock key={reserva.id} reserva={reserva} />
-              ))}
-
-              {/* Velo semitransparente mientras recarga reservas */}
-              {reservasLoading && (
-                <div className="absolute inset-0 bg-white/60 z-20" />
-              )}
-            </div>
-          )
-        })}
       </div>
 
-    </div>
+      {/* ══ MODALES ══════════════════════════════════════════════════════════ */}
+
+      {celdaActiva && (
+        <ModalNuevaReserva
+          pista={celdaActiva.pista}
+          hora={celdaActiva.hora}
+          fecha={fecha}
+          onClose={() => setCeldaActiva(null)}
+          onSuccess={() => { refetch(); setCeldaActiva(null) }}
+        />
+      )}
+
+      {reservaActiva && (
+        <ModalDetalleReserva
+          reserva={reservaActiva.reserva}
+          pista={reservaActiva.pista}
+          onClose={() => setReservaActiva(null)}
+          onSuccess={() => { refetch(); setReservaActiva(null) }}
+        />
+      )}
+    </>
   )
 }

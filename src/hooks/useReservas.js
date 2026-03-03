@@ -5,6 +5,7 @@ export function useReservas(fecha) {
   const [reservas, setReservas] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [tick, setTick] = useState(0)
 
   useEffect(() => {
     if (!fecha) return
@@ -32,7 +33,9 @@ export function useReservas(fecha) {
 
     fetchReservas()
     return () => { cancelled = true }
-  }, [fecha])
+  }, [fecha, tick])
 
-  return { reservas, loading, error }
+  const refetch = () => setTick(t => t + 1)
+
+  return { reservas, loading, error, refetch }
 }
