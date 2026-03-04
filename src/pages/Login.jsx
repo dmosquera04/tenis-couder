@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 
-export default function Login() {
+export default function Login({ onVolver }) {
   const { login } = useAuth()
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
@@ -90,6 +90,16 @@ export default function Login() {
           >
             {loading ? 'Entrando…' : 'Entrar'}
           </button>
+
+          {onVolver && (
+            <button
+              type="button"
+              onClick={onVolver}
+              className="text-sm text-gray-400 hover:text-gray-600 transition-colors text-center"
+            >
+              ← Volver
+            </button>
+          )}
 
         </form>
       </div>

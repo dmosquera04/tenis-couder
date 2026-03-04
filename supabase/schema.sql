@@ -87,20 +87,18 @@ ALTER TABLE pistas         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reservas       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notificaciones ENABLE ROW LEVEL SECURITY;
 
--- Política: acceso total con clave anon (app sin auth de usuarios)
--- Cuando implementes autenticación, reemplaza estas políticas.
+-- Política: acceso total para usuarios autenticados (profesores logueados)
+CREATE POLICY "auth_all_profesores" ON profesores
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
-CREATE POLICY "anon_all_profesores" ON profesores
-  FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "auth_all_pistas" ON pistas
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
-CREATE POLICY "anon_all_pistas" ON pistas
-  FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "auth_all_reservas" ON reservas
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
-CREATE POLICY "anon_all_reservas" ON reservas
-  FOR ALL TO anon USING (true) WITH CHECK (true);
-
-CREATE POLICY "anon_all_notificaciones" ON notificaciones
-  FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "auth_all_notificaciones" ON notificaciones
+  FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 
 -- ============================================================
