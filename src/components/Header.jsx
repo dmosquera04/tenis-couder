@@ -30,7 +30,7 @@ function NavBtn({ onClick, title, children }) {
 }
 
 // ─── Componente ──────────────────────────────────────────────────────────────
-export default function Header({ fecha, onChange }) {
+export default function Header({ fecha, onChange, user, onLogout }) {
   return (
     <header className="bg-white border-b border-gray-200 flex-shrink-0">
       <div className="px-4 sm:px-5 py-3 flex items-center justify-between gap-2 sm:gap-4">
@@ -73,6 +73,30 @@ export default function Header({ fecha, onChange }) {
           >
             Hoy
           </button>
+
+          {/* ── Sesión ── */}
+          {onLogout && (
+            <div className="ml-2 flex items-center gap-2 border-l border-gray-100 pl-3 flex-shrink-0">
+              <span className="hidden sm:block text-xs text-gray-400 max-w-[140px] truncate">
+                {user?.user_metadata?.nombre ?? user?.email}
+              </span>
+              <button
+                onClick={onLogout}
+                title="Cerrar sesión"
+                className="w-9 h-9 flex items-center justify-center rounded-xl
+                           text-gray-400 hover:bg-red-50 hover:text-red-500
+                           active:bg-red-100 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor" strokeWidth="2"
+                     strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
 
       </div>
