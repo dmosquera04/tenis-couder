@@ -5,14 +5,13 @@ export default function Bienvenida({ onLogin, onRegistro }) {
       <div className="w-full max-w-sm flex flex-col items-center gap-8">
 
         {/* ── Logo ── */}
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-20 h-20 bg-green-500 rounded-3xl flex items-center justify-center shadow-md">
-            <span className="text-4xl select-none">🎾</span>
-          </div>
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Tenis Couder</h1>
-            <p className="text-sm text-gray-400 mt-1">Gestión de pistas y reservas</p>
-          </div>
+        <div className="flex flex-col items-center gap-3">
+          <img
+            src="/logo.jpg"
+            alt="Tenis Couder"
+            className="w-40 h-40 object-contain drop-shadow-sm"
+          />
+          <p className="text-sm text-gray-400">Gestión de pistas y reservas</p>
         </div>
 
         {/* ── Opciones ── */}

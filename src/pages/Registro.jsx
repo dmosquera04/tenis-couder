@@ -36,9 +36,7 @@ export default function Registro({ onVolver }) {
 
         {/* ── Logo ── */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 bg-green-500 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
-            <span className="text-white text-2xl select-none">🎾</span>
-          </div>
+          <img src="/logo.jpg" alt="Tenis Couder" className="w-16 h-16 object-contain mb-2" />
           <h1 className="text-xl font-bold text-gray-900 tracking-tight">Crear cuenta</h1>
           <p className="text-sm text-gray-400 mt-1">Acceso para profesores</p>
         </div>
