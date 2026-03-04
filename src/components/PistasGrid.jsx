@@ -1,4 +1,4 @@
-import { useState }           from 'react'
+import { useState, useRef }   from 'react'
 import { usePistas }          from '../hooks/usePistas'
 import { useReservas }        from '../hooks/useReservas'
 import ModalNuevaReserva      from './ModalNuevaReserva'
@@ -143,7 +143,19 @@ function ReservaBlock({ reserva, onClick }) {
 
 // ─── Componente principal ──────────────────────────────────────────────────────
 
-export default function PistasGrid({ fecha }) {
+function moveDay(iso, delta) {
+  const d = new Date(iso + 'T00:00:00')
+  d.setDate(d.getDate() + delta)
+  return d.toISOString().split('T')[0]
+}
+
+function formatFechaCorta(iso) {
+  return new Date(iso + 'T00:00:00').toLocaleDateString('es-ES', {
+    weekday: 'short', day: 'numeric', month: 'short',
+  })
+}
+
+export default function PistasGrid({ fecha, onFechaChange }) {
   const { pistas,  loading: pistasLoading,  error: pistasError  } = usePistas()
   const { reservas, loading: reservasLoading, refetch }           = useReservas(fecha)
 
@@ -151,6 +163,8 @@ export default function PistasGrid({ fecha }) {
   const [celdaActiva,   setCeldaActiva]   = useState(null)
   // null | { reserva, pista }
   const [reservaActiva, setReservaActiva] = useState(null)
+
+  const dateInputRef = useRef(null)
 
   if (pistasLoading) return <LoadingState />
   if (pistasError)   return <ErrorState message={pistasError.message} />
@@ -162,6 +176,60 @@ export default function PistasGrid({ fecha }) {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
+
+      {/* ── Selector de fecha ─────────────────────────────────────────────── */}
+      {onFechaChange && (
+        <div className="flex items-center gap-1 mb-2 self-start">
+          <button
+            onClick={() => onFechaChange(moveDay(fecha, -1))}
+            title="Día anterior"
+            className="w-8 h-8 flex items-center justify-center rounded-lg
+                       text-gray-500 hover:bg-gray-200 active:bg-gray-300
+                       transition-colors text-lg leading-none select-none"
+          >
+            ‹
+          </button>
+
+          {/* Botón calendario → abre el date input nativo */}
+          <button
+            onClick={() => dateInputRef.current?.showPicker?.() ?? dateInputRef.current?.click()}
+            title="Elegir día"
+            className="flex items-center gap-1.5 px-3 h-8 rounded-lg border border-gray-200
+                       bg-white hover:bg-gray-50 active:bg-gray-100 transition-colors
+                       text-sm font-medium text-gray-700"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-green-500 flex-shrink-0"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8"  y1="2" x2="8"  y2="6"/>
+              <line x1="3"  y1="10" x2="21" y2="10"/>
+            </svg>
+            <span className="capitalize">{formatFechaCorta(fecha)}</span>
+          </button>
+
+          {/* Input nativo oculto */}
+          <input
+            ref={dateInputRef}
+            type="date"
+            value={fecha}
+            onChange={(e) => onFechaChange(e.target.value)}
+            className="sr-only"
+          />
+
+          <button
+            onClick={() => onFechaChange(moveDay(fecha, +1))}
+            title="Día siguiente"
+            className="w-8 h-8 flex items-center justify-center rounded-lg
+                       text-gray-500 hover:bg-gray-200 active:bg-gray-300
+                       transition-colors text-lg leading-none select-none"
+          >
+            ›
+          </button>
+        </div>
+      )}
+
       <div
         className="flex-1 min-h-0 overflow-auto rounded-xl border border-gray-200 shadow-sm bg-white"
       >

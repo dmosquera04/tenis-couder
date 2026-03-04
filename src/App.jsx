@@ -38,7 +38,7 @@ export default function App() {
 
       {/* ── Contenido principal ── */}
       <main className="flex-1 min-h-0 flex flex-col p-3 sm:p-4">
-        <PistasGrid fecha={fecha} />
+        <PistasGrid fecha={fecha} onFechaChange={setFecha} />
       </main>
 
     </div>
